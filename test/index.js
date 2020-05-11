@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
 const sinon = require('sinon');
-const signer = require('..')({ secret: 'hidden' });
+const signer = require('../signed-url')({ secret: 'hidden' });
 
 describe('index', function () {
   let clock;
@@ -17,7 +17,7 @@ describe('index', function () {
   it('should sign a url', function () {
     const url = 'https://www.example.com/test?a=1&b=2';
     const signed = signer.sign(url, { method: 'get', ttl: 600 });
-    expect(signed).to.equal('https://www.example.com/test?a=1&b=2&hash=JmMQHFOrXqbqDAgKQyfX7rFJElQiglvwDyVnQtCbTmk.MTU3MDcxMTUwMQ');
+    expect(signed).to.equal('https://www.example.com/test?a=1&b=2&hash=-eMsTV-uCUmhzLBPSo2C2jN3HpDHJZI1On5hMIceL2w.MTU3MDcxMTUwMQ');
   });
 
   it('should verify a signed url', function () {
@@ -49,7 +49,7 @@ describe('index', function () {
     const req = {
       protocol: 'https',
       get: () => 'www.example.com',
-      originalUrl: '/test?a=1&b=2&hash=JmMQHFOrXqbqDAgKQyfX7rFJElQiglvwDyVnQtCbTmk.MTU3MDcxMTUwMQ',
+      originalUrl: '/test?a=1&b=2&hash=-eMsTV-uCUmhzLBPSo2C2jN3HpDHJZI1On5hMIceL2w.MTU3MDcxMTUwMQ',
       method: 'GET'
     };
     const middleware = signer.verifyMiddleware;
