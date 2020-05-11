@@ -6,9 +6,11 @@ const { urlsafe, i2b, b2i } = require('./utils');
 
 class SignedUrl {
   constructor (options = {}) {
-    const { key = 'hash', secret } = options;
+    const { key = 'hash', secret, ignoreHostname = true } = options;
     this.secret = secret;
     this.key = key;
+    this.ignoreHostname = ignoreHostname;
+
     abind(this);
   }
 
@@ -17,7 +19,8 @@ class SignedUrl {
     const u = new URL(url);
     u.searchParams.delete(this.key);
     u.searchParams.sort();
-    const contents = [method.toUpperCase(), formatUrl(u), expire].filter(Boolean).join(':');
+    const contentUrl = (this.ignoreHostname) ? formatUrl(u).substring(u.origin.length) : formatUrl(u);
+    const contents = [method.toUpperCase(), contentUrl, expire].filter(Boolean).join(':');
     const hash = createHmac('sha256', this.secret).update(contents).digest('base64');
     return [urlsafe(hash), expire && i2b(expire)].filter(Boolean).join('.');
   }
