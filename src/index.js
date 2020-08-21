@@ -20,6 +20,7 @@ class SignedUrl {
     u.searchParams.delete(this.key);
     u.searchParams.sort();
     const contentUrl = (this.ignoreHostname) ? formatUrl(u).substring(u.origin.length) : formatUrl(u);
+    console.log('hash url = ' + contentUrl);
     const contents = [method.toUpperCase(), contentUrl, expire].filter(Boolean).join(':');
     const hash = createHmac('sha256', this.secret).update(contents).digest('base64');
     return [urlsafe(hash), expire && i2b(expire)].filter(Boolean).join('.');
