@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
 const sinon = require('sinon');
-const signer = require('../signed-url')({ secret: 'hidden' });
+const signer = require('../src')({ secret: 'hidden' });
 
 describe('index', function () {
   let clock;
@@ -14,15 +14,28 @@ describe('index', function () {
     clock.restore();
   });
 
+  it('should sign a url equal for ignore hostname', function () {
+    const ignoreSigner = require('../src')({ secret: 'hidden', ignoreHostname: true });
+    const url = 'https://www.example.com/test?a=1&b=2';
+    const signed = ignoreSigner.sign(url, { method: 'get', ttl: 600 });
+    const url2 = 'https://www.example.com/sub_test/test?a=1&b=2';
+    const signed2 = ignoreSigner.sign(url2, { method: 'get', ttl: 600 });
+
+    const urlParams = new URLSearchParams(signed);
+    const urlParams2 = new URLSearchParams(signed2);
+    expect(urlParams.get('hash')).to.equal(urlParams2.get('hash'));
+  });
+
   it('should sign a url', function () {
     const url = 'https://www.example.com/test?a=1&b=2';
-    const signed = signer.sign(url, { method: 'get', ttl: 600 });
-    expect(signed).to.equal('https://www.example.com/test?a=1&b=2&hash=-eMsTV-uCUmhzLBPSo2C2jN3HpDHJZI1On5hMIceL2w.MTU3MDcxMTUwMQ');
+    const signed = signer.sign(url, { method: 'get', ttl: 600, ignoreHostname: true });
+    expect(signed).to.equal('https://www.example.com/test?a=1&b=2&hash=L80zv1xETeBTSilIc0WisV3WHQOlSoaFFdovLcPmrUQ.MTU3MDcxMTUwMQ');
   });
 
   it('should verify a signed url', function () {
     const url = 'https://www.example.com/test?a=1&b=2';
     const signed = signer.sign(url, { method: 'get', ttl: 600 });
+    console.log('signed 1: ' + signed);
     expect(signer.verify(signed, { method: 'get' })).to.be.true();
   });
 
@@ -49,7 +62,7 @@ describe('index', function () {
     const req = {
       protocol: 'https',
       get: () => 'www.example.com',
-      originalUrl: '/test?a=1&b=2&hash=-eMsTV-uCUmhzLBPSo2C2jN3HpDHJZI1On5hMIceL2w.MTU3MDcxMTUwMQ',
+      originalUrl: '/test?a=1&b=2&hash=L80zv1xETeBTSilIc0WisV3WHQOlSoaFFdovLcPmrUQ.MTU3MDcxMTUwMQ',
       method: 'GET'
     };
     const middleware = signer.verifyMiddleware;

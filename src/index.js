@@ -6,10 +6,11 @@ const { urlsafe, i2b, b2i } = require('./utils');
 
 class SignedUrl {
   constructor (options = {}) {
-    const { key = 'hash', secret, ignoreHostname = true } = options;
+    const { key = 'hash', secret, ignoreHostname = true, specialKey = 'specialKey' } = options;
     this.secret = secret;
     this.key = key;
     this.ignoreHostname = ignoreHostname;
+    this.specialKey = specialKey;
 
     abind(this);
   }
@@ -19,11 +20,21 @@ class SignedUrl {
     const u = new URL(url);
     u.searchParams.delete(this.key);
     u.searchParams.sort();
-    const contentUrl = (this.ignoreHostname) ? formatUrl(u).substring(u.origin.length) : formatUrl(u);
+    const contentUrl = this.getContent(formatUrl(u));
     console.log('hash url = ' + contentUrl);
     const contents = [method.toUpperCase(), contentUrl, expire].filter(Boolean).join(':');
     const hash = createHmac('sha256', this.secret).update(contents).digest('base64');
+
     return [urlsafe(hash), expire && i2b(expire)].filter(Boolean).join('.');
+  }
+
+  getContent (url) {
+    const u = new URL(url);
+    const content = formatUrl(u);
+    if (this.ignoreHostname) {
+      return content.substring(content.lastIndexOf('/')) + this.specialKey;
+    }
+    return content + this.specialKey;
   }
 
   sign (url, options = {}) {
@@ -40,6 +51,9 @@ class SignedUrl {
     const [, exp] = hash.split('.');
     const expire = exp && b2i(exp);
     const expired = expire && expire < Date.now() / 1000;
+
+    const hashTest = this.hash(url, { ...options, expire });
+    console.log('hashTest :' + hashTest);
     return !expired && hash === this.hash(url, { ...options, expire });
   }
 
